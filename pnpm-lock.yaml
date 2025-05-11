@@ -1,0 +1,46 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@openzeppelin/contracts':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@uniswap/v4-core':
+        specifier: ^1.0.1
+        version: 1.0.1
+      '@uniswap/v4-periphery':
+        specifier: ^1.0.1
+        version: 1.0.1
+      solmate:
+        specifier: ^6.8.0
+        version: 6.8.0
+
+packages:
+
+  '@openzeppelin/contracts@5.3.0':
+    resolution: {integrity: sha512-zj/KGoW7zxWUE8qOI++rUM18v+VeLTTzKs/DJFkSzHpQFPD/jKKF0TrMxBfGLl3kpdELCNccvB3zmofSzm4nlA==}
+
+  '@uniswap/v4-core@1.0.1':
+    resolution: {integrity: sha512-+UITeH0s/EXJ698nKFoWX6ZW2dOnIDjhUI3AJ0Hg3v+w/Sy4JIDsgmsQSeNu1FAEc72xm4muKY6YuXu9bR2X4Q==}
+
+  '@uniswap/v4-periphery@1.0.1':
+    resolution: {integrity: sha512-/ZLz7mCLL0eTo1M0h/Lc180OYMmpUEGb0yfqZ79nsqVdZCFp0TLQstLZ/zC+ofF7SrMoeGb57p+T8hbe6MXwNw==}
+
+  solmate@6.8.0:
+    resolution: {integrity: sha512-/oI8kgEvSxGG1mrFv3FmCEZd0F8Z9VzRmoYMIhzmmzt6mjtPwfdCm3oh8yOL7bMHJBSfXJuMpnMPrM0uyaKsKg==}
+
+snapshots:
+
+  '@openzeppelin/contracts@5.3.0': {}
+
+  '@uniswap/v4-core@1.0.1': {}
+
+  '@uniswap/v4-periphery@1.0.1': {}
+
+  solmate@6.8.0: {}
