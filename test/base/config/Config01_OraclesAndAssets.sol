@@ -25,6 +25,7 @@ contract Config01_OraclesAndAssets {
         assetsConfig.push(AssetConfig("Mock WBTC", "WBTC", 100_000_000 * 1e8));
         assetsConfig.push(AssetConfig("Mock PT-sUSDe-31JUL2025", "PT-sUSDe-31JUL2025", 10_000_000 * 1e18));
         assetsConfig.push(AssetConfig("Mock wstETH", "wstETH", 10_000_000 * 1e18));
+        assetsConfig.push(AssetConfig("Mock WETH", "WETH", 0 * 1e18));
 
         // Initialize Oracles
         oraclesConfig.push(OracleConfig("DAI / USD", 1 * 1e8));
