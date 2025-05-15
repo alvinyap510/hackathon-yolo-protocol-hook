@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract Config {
+contract Config01_OraclesAndAssets {
     struct AssetConfig {
         string name;
         string symbol;
@@ -25,7 +25,6 @@ contract Config {
         assetsConfig.push(AssetConfig("Mock WBTC", "WBTC", 100_000_000 * 1e8));
         assetsConfig.push(AssetConfig("Mock PT-sUSDe-31JUL2025", "PT-sUSDe-31JUL2025", 10_000_000 * 1e18));
         assetsConfig.push(AssetConfig("Mock wstETH", "wstETH", 10_000_000 * 1e18));
-
 
         // Initialize Oracles
         oraclesConfig.push(OracleConfig("DAI / USD", 1 * 1e8));
