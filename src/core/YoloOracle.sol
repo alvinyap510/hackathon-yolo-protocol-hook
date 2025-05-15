@@ -62,7 +62,7 @@ contract YoloOracle is Ownable {
         return address(assetsSources[asset]);
     }
 
-    // Set the anchor (YoloUSD), can only be set once
+    // Set the anchor (YoloUSD), can only be set onceclear
     function setAnchor(address _anchor) external onlyOwner {
         require(anchor == address(0), "YoloOracle: anchor already set");
         anchor = _anchor;
