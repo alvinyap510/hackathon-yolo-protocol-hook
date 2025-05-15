@@ -11,7 +11,7 @@ import "@yolo/contracts/interfaces/IPriceOracle.sol";
  *          track collateral assets' price, Yolo assets reference price for health factor monitoring and
  *          liquidation purpose.
  * @dev     Based on AaveV3's AaveOracle.sol.
- *          Simplified for Hackathon purpose, not ready for production.
+ *          WARNING: SIMPLIFIED FOR HACKATHON PURPOSE, NOT READY FOR PRODUCTION
  */
 contract YoloOracle is Ownable {
     mapping(address => IPriceOracle) private assetsSources;
