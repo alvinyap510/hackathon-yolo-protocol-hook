@@ -1,0 +1,8 @@
+forge-std/=lib/forge-std/src/
+@uniswap/v4-periphery=node_modules/@uniswap/v4-periphery
+@uniswap/v4-core=node_modules/@uniswap/v4-core
+@openzeppelin/=node_modules/@openzeppelin/
+@layerzerolabs/=node_modules/@layerzerolabs/
+@openzeppelin/contracts=node_modules/@openzeppelin/contracts
+solmate=node_modules/solmate
+@yolo/contracts=src/
