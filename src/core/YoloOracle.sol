@@ -14,9 +14,13 @@ import "@yolo/contracts/interfaces/IPriceOracle.sol";
  *          WARNING: SIMPLIFIED FOR HACKATHON PURPOSE, NOT READY FOR PRODUCTION
  */
 contract YoloOracle is Ownable {
+    address public anchor;
+
     mapping(address => IPriceOracle) private assetsSources;
 
     event AssetSourceUpdated(address indexed asset, address indexed source);
+
+    event AnchorSet(address indexed anchor);
 
     constructor(address[] memory assets, address[] memory sources) Ownable(msg.sender) {
         _setAssetsSources(assets, sources);
@@ -36,6 +40,7 @@ contract YoloOracle is Ownable {
     }
 
     function getAssetPrice(address asset) public view returns (uint256) {
+        if (anchor != address(0) && asset == anchor) return 1e8;
         IPriceOracle source = assetsSources[asset];
         require(address(source) != address(0), "YoloOracle: unsupported asset");
 
@@ -55,5 +60,12 @@ contract YoloOracle is Ownable {
 
     function getSourceOfAsset(address asset) external view returns (address) {
         return address(assetsSources[asset]);
+    }
+
+    // Set the anchor (YoloUSD), can only be set once
+    function setAnchor(address _anchor) external onlyOwner {
+        require(anchor == address(0), "YoloOracle: anchor already set");
+        anchor = _anchor;
+        emit AnchorSet(_anchor);
     }
 }
