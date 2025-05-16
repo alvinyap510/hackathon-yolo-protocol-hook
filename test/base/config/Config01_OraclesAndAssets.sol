@@ -32,10 +32,10 @@ contract Config01_OraclesAndAssets {
         oraclesConfig.push(OracleConfig("USDC / USD", 1 * 1e8));
         oraclesConfig.push(OracleConfig("USDT / USD", 1 * 1e8));
         oraclesConfig.push(OracleConfig("USDe / USD", 1 * 1e8));
-        oraclesConfig.push(OracleConfig("BTC / USD", 104_000 * 1e8));
+        oraclesConfig.push(OracleConfig("WBTC / USD", 104_000 * 1e8));
         oraclesConfig.push(OracleConfig("PT-sUSDe-31JUL2025 / USD", 2_600 * 1e8));
         oraclesConfig.push(OracleConfig("wstETH / USD", 3_061_441_798_33));
-        oraclesConfig.push(OracleConfig("ETH / USD", 2_600 * 1e8));
+        oraclesConfig.push(OracleConfig("WETH / USD", 2_600 * 1e8));
     }
 
     function getAssetsLength() public view returns (uint256) {
