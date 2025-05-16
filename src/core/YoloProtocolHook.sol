@@ -977,12 +977,4 @@ contract YoloProtocolHook is Ownable, BaseHook {
         }
         return (this.beforeSwap.selector, beforeSwapDelta, /*poolFee*/ 0);
     }
-
-    // ****************************************** //
-    // *** HOOK FUNCTIONS - HANDLE ANCHOR *** //
-    // ****************************************** //
-
-    function _swapAnchor() internal {}
-
-    function _swapSyhthetic() internal {}
 }
