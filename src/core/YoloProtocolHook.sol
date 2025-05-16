@@ -1,18 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-/*---------- IMPORT LIBRARIES ----------*/
+/*---------- IMPORT LIBRARIES & TYPES ----------*/
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
+import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
+import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
+import {BeforeSwapDelta, toBeforeSwapDelta} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
+import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
+import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
 /*---------- IMPORT INTERFACES ----------*/
 import "@yolo/contracts/interfaces/IYoloAsset.sol";
 import "@yolo/contracts/interfaces/IYoloOracle.sol";
 import "@yolo/contracts/interfaces/IWETH.sol";
 import "@yolo/contracts/interfaces/IFlashBorrower.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+
 /*---------- IMPORT CONTRACTS ----------*/
 import "@yolo/contracts/core/YoloAsset.sol";
 /*---------- IMPORT BASE CONTRACTS ----------*/
 import "@openzeppelin/contracts/access/Ownable.sol";
+import {BaseHook} from "@uniswap/v4-periphery/src/utils/BaseHook.sol";
 
 /**
  * @title   YoloProtocolHook
@@ -24,11 +33,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 
 // Later will update and inherit BaseHook from uniswapV4
-contract YoloProtocolHook is Ownable {
+contract YoloProtocolHook is Ownable, BaseHook {
     // ***************** //
     // *** LIBRARIES *** //
     // ***************** //
     using SafeERC20 for IERC20;
+    using PoolIdLibrary for PoolId;
+    using CurrencyLibrary for Currency;
+    using CurrencySettler for Currency;
 
     // ***************** //
     // *** DATATYPES *** //
@@ -80,6 +92,7 @@ contract YoloProtocolHook is Ownable {
     IWETH public immutable weth;
 
     IYoloAsset public anchor;
+    IERC20 public usdc; // functions as pair of anchor
     IYoloOracle public yoloOracle;
     address public treasury;
 
@@ -100,9 +113,16 @@ contract YoloProtocolHook is Ownable {
     mapping(address => CollateralConfiguration) public collateralConfigs; // Maps collateral to its configuration
 
     mapping(address => YoloAssetConfiguration) public yoloAssetConfigs; // Maps Yolo assets to its configuration
+
     uint256 public flashLoanFee;
 
+    uint256 public hookSwapFee;
+
     mapping(address => UserPositionKey[]) public userPositionKeys;
+
+    mapping(bytes32 => bool) public isAnchorPool;
+
+    mapping(bytes32 => bool) public isSyntheticPool;
 
     // ************** //
     // *** EVENTS *** //
@@ -162,11 +182,32 @@ contract YoloProtocolHook is Ownable {
         uint256 repayAmount,
         uint256 collateralSeized
     );
+
+    event AnchorLiquidityAdded(bytes32 indexed poolId, address indexed provider, uint256 amountUSDC);
+
+    event HookSwapExecuted(
+        bytes32 indexed poolId,
+        address indexed sender,
+        bool zeroForOne,
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 amountOut,
+        uint256 fee
+    );
+
     // ******************* //
     // *** CONSTRUCTOR *** //
     // ******************* //
 
-    constructor(address _yoloOracle, address _treasury, address _wethAddress) Ownable(msg.sender) {
+    constructor(
+        address _yoloOracle,
+        address _treasury,
+        address _wethAddress,
+        address _v4PoolManager,
+        uint256 _hookSwapFee,
+        address _usdc
+    ) Ownable(msg.sender) BaseHook(IPoolManager(_v4PoolManager)) {
         yoloOracle = IYoloOracle(_yoloOracle);
         treasury = _treasury;
         anchor = IYoloAsset(address(new YoloAsset("Yolo USD", "USY", 18)));
@@ -175,6 +216,27 @@ contract YoloProtocolHook is Ownable {
         weth = IWETH(_wethAddress);
         isWhiteListedCollateral[_wethAddress] = true;
         collateralConfigs[address(weth)] = CollateralConfiguration(address(weth), 0);
+        hookSwapFee = _hookSwapFee;
+        usdc = IERC20(_usdc);
+
+        //
+        // ── SORT & INIT THE ANCHOR POOL FOR USDC⇄USY ─────────────────────────────────
+        //
+        address tokenA = _usdc;
+        address tokenB = address(anchor);
+        bool usdcIs0 = tokenA < tokenB;
+
+        Currency c0 = Currency.wrap(usdcIs0 ? tokenA : tokenB);
+        Currency c1 = Currency.wrap(usdcIs0 ? tokenB : tokenA);
+
+        PoolKey memory pk =
+            PoolKey({currency0: c0, currency1: c1, fee: 0, tickSpacing: 1, hooks: IHooks(address(this))});
+        // initialize at 1:1 => sqrtPriceX96 = 1<<96
+
+        poolManager.initialize(pk, uint160(1) << 96);
+
+        // mark it for our hook
+        isAnchorPool[PoolId.unwrap(pk.toId())] = true;
     }
 
     // ********************** //
@@ -732,10 +794,181 @@ contract YoloProtocolHook is Ownable {
     }
 
     // ****************************************** //
-    // *** INTERNAL FUNCTIONS - HANDLE ANCHOR *** //
+    // *** HOOK FUNCTIONS *** //
     // ****************************************** //
 
-    // *********************************************** //
-    // *** INTERNAL FUNCTIONS - HANDLE YOLO ASSETS *** //
-    // *********************************************** //
+    function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
+        return Hooks.Permissions({
+            beforeInitialize: false,
+            afterInitialize: false,
+            beforeAddLiquidity: true, // Block direct adding liquidity
+            afterAddLiquidity: false,
+            beforeRemoveLiquidity: false,
+            afterRemoveLiquidity: false,
+            beforeSwap: true, //
+            afterSwap: false,
+            beforeDonate: false,
+            afterDonate: false,
+            beforeSwapReturnDelta: true, //
+            afterSwapReturnDelta: false,
+            afterAddLiquidityReturnDelta: false,
+            afterRemoveLiquidityReturnDelta: false
+        });
+    }
+
+    function addUSDCLiquidity(uint256 amountUSDC) external {
+        // reconstruct the exact same PoolKey we used in constructor:
+        address tokenA = address(usdc);
+        address tokenB = address(anchor);
+        bool usdcIs0 = tokenA < tokenB;
+
+        Currency cur0 = usdcIs0 ? Currency.wrap(tokenA) : Currency.wrap(tokenB);
+        Currency cur1 = usdcIs0 ? Currency.wrap(tokenB) : Currency.wrap(tokenA);
+
+        PoolKey memory pk =
+            PoolKey({currency0: cur0, currency1: cur1, fee: 0, tickSpacing: 1, hooks: IHooks(address(this))});
+        bytes32 id = PoolId.unwrap(pk.toId());
+        require(isAnchorPool[id], "YoloProtocolHook: not anchor pool");
+
+        // pull real USDC into PM
+        cur0.settle(poolManager, msg.sender, amountUSDC, false);
+        // mint USDC‐claim tokens to us
+        cur0.take(poolManager, address(this), amountUSDC, true);
+
+        // mint matching USY into hook
+        IYoloAsset(address(anchor)).mint(address(this), amountUSDC);
+
+        // notify PM of our balanced (x == y) liquidity change
+        emit AnchorLiquidityAdded(PoolId.unwrap(pk.toId()), msg.sender, amountUSDC);
+    }
+
+    function _beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyLiquidityParams calldata, bytes calldata)
+        internal
+        pure
+        override
+        returns (bytes4)
+    {
+        revert("YoloProtocolHook: Liquidity shouldn't be added directly to PoolManager");
+    }
+
+    function _beforeSwap(address sender, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata)
+        internal
+        override
+        returns (bytes4, BeforeSwapDelta, uint24)
+    {
+        bytes32 id = PoolId.unwrap(key.toId());
+        require(isAnchorPool[id] || isSyntheticPool[id], "YoloProtocolHook: unrecognized pool");
+
+        // If amountSpecified is > 0 (exact‐output swap), amountInOutPositive = amountSpecified.
+        // If amountSpecified is < 0 (exact‐input swap), amountInOutPositive = –amountSpecified.
+        uint256 amountInOutPositive =
+            params.amountSpecified > 0 ? uint256(params.amountSpecified) : uint256(-params.amountSpecified);
+
+        // Cancel out amount to bypass PoolManager's default swap logic
+        BeforeSwapDelta beforeSwapDelta =
+            toBeforeSwapDelta(int128(-params.amountSpecified), int128(params.amountSpecified));
+
+        if (isAnchorPool[id]) {
+            // Stable Swap or CSMM Swap
+
+            //
+            // ── ANCHOR SWAP: USDC ⇄ USY @1:1 (minus hook fee) ───────────────────────
+            //
+            (Currency curIn, Currency curOut) =
+                params.zeroForOne ? (key.currency0, key.currency1) : (key.currency1, key.currency0);
+
+            uint256 inFee = (amountInOutPositive * hookSwapFee) / PRECISION_DIVISOR;
+            uint256 netIn = amountInOutPositive - inFee;
+            // if user is selling USDC for USY
+            if (Currency.unwrap(curIn) == address(usdc)) {
+                // pull USDC from user → PM
+                curIn.settle(poolManager, sender, amountInOutPositive, /*burnClaim=*/ false);
+
+                // mint USY to user + fee to treasury
+                IYoloAsset(address(anchor)).mint(sender, netIn);
+                IYoloAsset(address(anchor)).mint(treasury, inFee);
+                emit HookSwapExecuted(
+                    id,
+                    sender,
+                    params.zeroForOne,
+                    address(Currency.unwrap(curIn)), // USDC
+                    netIn, // net USDC in after fee
+                    address(Currency.unwrap(curOut)), // USY
+                    netIn, // 1:1 mint
+                    inFee // fee in USDC
+                );
+            } else {
+                // user is selling USY for USDC
+
+                // burn user’s USY directly
+                IYoloAsset(address(anchor)).burn(sender, amountInOutPositive);
+
+                // pay out USDC from PM → user & fee → treasury
+                curOut.settle(poolManager, sender, netIn, /*burnClaim=*/ false);
+                curOut.settle(poolManager, treasury, inFee, /*burnClaim=*/ false);
+                emit HookSwapExecuted(
+                    id,
+                    sender,
+                    params.zeroForOne,
+                    address(Currency.unwrap(curIn)), // USY
+                    netIn, // net USY in after fee
+                    address(Currency.unwrap(curOut)), // USDC
+                    netIn, // 1:1 payout
+                    inFee // fee in USY
+                );
+            }
+        } else {
+            //
+            // ── SYNTHETIC SWAP ─────────────────────────────────────────────────────
+            //
+
+            // 1) pick currencies
+            (Currency curIn, Currency curOut) =
+                params.zeroForOne ? (key.currency0, key.currency1) : (key.currency1, key.currency0);
+
+            // 2) compute fee & net
+            uint256 inFee = (amountInOutPositive * hookSwapFee) / PRECISION_DIVISOR;
+            uint256 netIn = amountInOutPositive - inFee;
+
+            // 3) pull the full amount from the user into the PoolManager
+            //    (this burns the user's ERC-20 and leaves a debit in PM)
+            curIn.settle(poolManager, sender, amountInOutPositive, /*burnClaim=*/ false);
+
+            // 4) mint claim-tokens in PM for the fee straight to the treasury
+            curIn.take(poolManager, treasury, inFee, /*mintClaim=*/ true);
+
+            // 5) mint claim-tokens in PM for the net amount into this hook
+            curIn.take(poolManager, address(this), netIn, /*mintClaim=*/ true);
+
+            // 6) burn those net claim-tokens to remove them from supply
+            IYoloAsset(address(Currency.unwrap(curIn))).burn(address(this), netIn);
+
+            // 7) oracle-convert and mint out to the user
+            uint256 priceIn = yoloOracle.getAssetPrice(address(Currency.unwrap(curIn)));
+            uint256 priceOut = yoloOracle.getAssetPrice(address(Currency.unwrap(curOut)));
+            uint256 usdValue = netIn * priceIn;
+            uint256 outAmt = usdValue / priceOut;
+            IYoloAsset(address(Currency.unwrap(curOut))).mint(sender, outAmt);
+
+            emit HookSwapExecuted(
+                id,
+                sender,
+                params.zeroForOne,
+                address(Currency.unwrap(curIn)), // e.g. YOLO-JPY
+                netIn, // net “in” asset after fee
+                address(Currency.unwrap(curOut)), // e.g. YOLO-USD
+                outAmt, // price-converted “out”
+                inFee // fee in input asset
+            );
+        }
+        return (this.beforeSwap.selector, beforeSwapDelta, /*poolFee*/ 0);
+    }
+
+    // ****************************************** //
+    // *** HOOK FUNCTIONS - HANDLE ANCHOR *** //
+    // ****************************************** //
+
+    function _swapAnchor() internal {}
+
+    function _swapSyhthetic() internal {}
 }
