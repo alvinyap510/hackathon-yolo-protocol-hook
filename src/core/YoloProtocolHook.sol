@@ -647,10 +647,24 @@ contract YoloProtocolHook is Ownable, BaseHook {
         address[] memory priceSources = new address[](1);
         assets[0] = a;
         priceSources[0] = _priceSource;
-
         yoloOracle.setAssetSources(assets, priceSources);
 
         emit YoloAssetCreated(a, _name, _symbol, _decimals, _priceSource);
+
+        // 4. Automatically create a synthetic pool vs. the anchor (USY)
+        //    and mark it in our mapping so _beforeSwap kicks in correctly.
+        bool anchorIs0 = address(anchor) < a;
+        Currency c0 = Currency.wrap(anchorIs0 ? address(anchor) : a);
+        Currency c1 = Currency.wrap(anchorIs0 ? a : address(anchor));
+
+        PoolKey memory pk =
+            PoolKey({currency0: c0, currency1: c1, fee: 0, tickSpacing: 1, hooks: IHooks(address(this))});
+
+        // initialize price at 1:1 (sqrtPriceX96 = 2^96)
+        poolManager.initialize(pk, uint160(1) << 96);
+
+        // mark it synthetic
+        isSyntheticPool[PoolId.unwrap(pk.toId())] = true;
     }
 
     function setYoloAssetConfig(address _asset, uint256 _newMintCap, uint256 _newFlashLoanCap) external onlyOwner {
