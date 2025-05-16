@@ -14,6 +14,8 @@ import "@yolo/contracts/interfaces/IPriceOracle.sol";
  *          WARNING: SIMPLIFIED FOR HACKATHON PURPOSE, NOT READY FOR PRODUCTION
  */
 contract YoloOracle is Ownable {
+    address public hook;
+
     address public anchor;
 
     mapping(address => IPriceOracle) private assetsSources;
@@ -22,11 +24,16 @@ contract YoloOracle is Ownable {
 
     event AnchorSet(address indexed anchor);
 
+    modifier onlyOwnerOrHook() {
+        require(msg.sender == hook || msg.sender == owner());
+        _;
+    }
+
     constructor(address[] memory assets, address[] memory sources) Ownable(msg.sender) {
         _setAssetsSources(assets, sources);
     }
 
-    function setAssetSources(address[] calldata assets, address[] calldata sources) external onlyOwner {
+    function setAssetSources(address[] calldata assets, address[] calldata sources) external onlyOwnerOrHook {
         _setAssetsSources(assets, sources);
     }
 
