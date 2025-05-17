@@ -19,10 +19,10 @@ contract Config01_OraclesAndAssets {
     constructor() {
         // Initialize Assets
         assetsConfig.push(AssetConfig("Mock DAI", "DAI", 100_000_000 * 1e18));
-        assetsConfig.push(AssetConfig("Mock USDC", "USDC", 100_000_000 * 1e6));
-        assetsConfig.push(AssetConfig("Mock USDT", "USDT", 100_000_000 * 1e6));
+        assetsConfig.push(AssetConfig("Mock USDC", "USDC", 100_000_000 * 1e18));
+        assetsConfig.push(AssetConfig("Mock USDT", "USDT", 100_000_000 * 1e18));
         assetsConfig.push(AssetConfig("Mock USDe", "USDe", 100_000_000 * 1e18));
-        assetsConfig.push(AssetConfig("Mock WBTC", "WBTC", 100_000_000 * 1e8));
+        assetsConfig.push(AssetConfig("Mock WBTC", "WBTC", 100_000_000 * 1e18));
         assetsConfig.push(AssetConfig("Mock PT-sUSDe-31JUL2025", "PT-sUSDe-31JUL2025", 10_000_000 * 1e18));
         assetsConfig.push(AssetConfig("Mock wstETH", "wstETH", 10_000_000 * 1e18));
         assetsConfig.push(AssetConfig("Mock WETH", "WETH", 0 * 1e18));

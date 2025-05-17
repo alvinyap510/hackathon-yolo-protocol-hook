@@ -31,7 +31,7 @@ contract Config02_AssetAndCollateralInitialization is Config01_OraclesAndAssets 
                 "Yolo JPY",
                 "JPYY",
                 18,
-                OracleConfig("JPY / USD", 6_900_000),
+                OracleConfig("JPY / USD", 0.0069 * 1e8),
                 YoloAssetConfiguration(10_000_000_000 * 1e18, 10_000_000_000 * 1e18)
             )
         );
@@ -63,7 +63,7 @@ contract Config02_AssetAndCollateralInitialization is Config01_OraclesAndAssets 
             )
         );
 
-        collateralAssetsArray.push(CollateralAsset("WBTC", 10_000 * 1e8));
+        collateralAssetsArray.push(CollateralAsset("WBTC", 10_000 * 1e18));
         collateralAssetsArray.push(CollateralAsset("PT-sUSDe-31JUL2025", 10_000_000 * 1e18));
     }
 }
