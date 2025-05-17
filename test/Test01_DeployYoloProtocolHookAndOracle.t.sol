@@ -97,12 +97,12 @@ contract Test01_DeployYoloProtocolHookAndOracle is
         assertEq(price, 1e8, "DAI price incorrect");
     }
 
-    function test_Test04_Case04_AssetRegistration() public {
+    function test_Test01_Case04_AssetRegistration() public {
         address dai = deployedAssets["DAI"];
         assertTrue(yoloOracle.getSourceOfAsset(dai) != address(0), "DAI not registered in Oracle");
     }
 
-    function test_Test05_Case05_WhitelistedCollateral() public {
+    function test_Test01_Case05_WhitelistedCollateral() public {
         assertTrue(yoloProtocolHook.isWhiteListedCollateral(weth), "WETH not whitelisted");
     }
 }
