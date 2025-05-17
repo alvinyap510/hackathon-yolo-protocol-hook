@@ -31,7 +31,7 @@ contract Config02_AssetAndCollateralInitialization is Config01_OraclesAndAssets 
                 "Yolo JPY",
                 "JPYY",
                 18,
-                OracleConfig("JPY / USD", 145 * 1e8),
+                OracleConfig("JPY / USD", 6_900_000),
                 YoloAssetConfiguration(10_000_000_000 * 1e18, 10_000_000_000 * 1e18)
             )
         );
@@ -40,7 +40,7 @@ contract Config02_AssetAndCollateralInitialization is Config01_OraclesAndAssets 
                 "Yolo KRW",
                 "KRWY",
                 18,
-                OracleConfig("KRW / USD", 1_401 * 1e8),
+                OracleConfig("KRW / USD", 71_000),
                 YoloAssetConfiguration(100_000_000_000 * 1e18, 100_000_000_000 * 1e18)
             )
         );
