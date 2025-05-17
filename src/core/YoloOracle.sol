@@ -79,7 +79,6 @@ contract YoloOracle is Ownable {
     }
 
     function setHook(address _hook) external onlyOwner {
-        require(hook == address(0), "YoloOracle: hook already set");
         hook = _hook;
         emit HookSet(_hook);
     }
