@@ -631,7 +631,8 @@ contract YoloProtocolHook is Ownable, BaseHook {
 
     function createNewYoloAsset(string calldata _name, string calldata _symbol, uint8 _decimals, address _priceSource)
         external
-        onlyOwner returns(address)
+        onlyOwner
+        returns (address)
     {
         // 1. Deploy the token
         YoloAsset asset = new YoloAsset(_name, _symbol, _decimals);
