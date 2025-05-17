@@ -68,5 +68,5 @@ contract Base01_DeployMockOraclesAndAssets is Test, Config01_OraclesAndAssets {
         return string(symbolBytes);
     }
 
-    function test01_Base01_DeployMockOraclesAndAssets() external {}
+    function test_Base01_Case01_DeployMockOraclesAndAssets() external {}
 }

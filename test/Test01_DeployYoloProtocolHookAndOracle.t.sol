@@ -20,7 +20,11 @@ contract Test01_DeployYoloProtocolHookAndOracle is
     address public usdc;
     uint256 public hookSwapFee = 250; // 0.25%
 
-    function setUp() public override(Base01_DeployMockOraclesAndAssets, Base02_DeployMockUniswapV4PoolManager) {
+    function setUp()
+        public
+        virtual
+        override(Base01_DeployMockOraclesAndAssets, Base02_DeployMockUniswapV4PoolManager)
+    {
         Base01_DeployMockOraclesAndAssets.setUp();
         Base02_DeployMockUniswapV4PoolManager.setUp();
 
@@ -68,7 +72,7 @@ contract Test01_DeployYoloProtocolHookAndOracle is
         }
     }
 
-    function test_01_DeploymentAndInitialization() public {
+    function test_Test01_Case01_DeploymentAndInitialization() public {
         assertTrue(address(yoloOracle) != address(0), "YoloOracle not deployed");
         assertTrue(address(yoloProtocolHook) != address(0), "YoloProtocolHook not deployed");
         assertEq(yoloProtocolHook.treasury(), treasury, "Treasury address mismatch");
@@ -76,7 +80,7 @@ contract Test01_DeployYoloProtocolHookAndOracle is
         assertTrue(yoloProtocolHook.isWhiteListedCollateral(weth), "WETH not whitelisted");
     }
 
-    function test_02_OracleInitialization() public {
+    function test_Test01_Case02_OracleInitialization() public {
         address[] memory assets = new address[](getAssetsLength());
 
         for (uint256 i = 0; i < getAssetsLength(); i++) {
@@ -87,18 +91,18 @@ contract Test01_DeployYoloProtocolHookAndOracle is
         }
     }
 
-    function test_03_OraclePriceFetch() public {
+    function test_Test01_Case03_OraclePriceFetch() public {
         address dai = deployedAssets["DAI"];
         uint256 price = yoloOracle.getAssetPrice(dai);
         assertEq(price, 1e8, "DAI price incorrect");
     }
 
-    function test_04_AssetRegistration() public {
+    function test_Test04_Case04_AssetRegistration() public {
         address dai = deployedAssets["DAI"];
         assertTrue(yoloOracle.getSourceOfAsset(dai) != address(0), "DAI not registered in Oracle");
     }
 
-    function test_05_WhitelistedCollateral() public {
+    function test_Test05_Case05_WhitelistedCollateral() public {
         assertTrue(yoloProtocolHook.isWhiteListedCollateral(weth), "WETH not whitelisted");
     }
 }

@@ -25,7 +25,7 @@ contract Base02_DeployMockUniswapV4PoolManager is Test, Deployers {
         emit log_named_address("Currency 1", Currency.unwrap(currency1));
     }
 
-    function test01_Base02_SwapCurrency0ToCurrency1() public {
+    function test_Base02_Case01_SwapCurrency0ToCurrency1() public {
         int256 amountIn = 1000 * 1e18;
         bytes memory hookData = bytes("");
 
@@ -38,7 +38,7 @@ contract Base02_DeployMockUniswapV4PoolManager is Test, Deployers {
         assert(delta.amount1() > 0);
     }
 
-    function test02_Base02_SwapCurrency1ToCurrency0() public {
+    function test_Base02_Case02_SwapCurrency1ToCurrency0() public {
         int256 amountIn = 1000 * 1e18;
         bytes memory hookData = bytes("");
 
