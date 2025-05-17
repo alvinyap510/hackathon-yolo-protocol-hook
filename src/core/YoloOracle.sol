@@ -24,6 +24,8 @@ contract YoloOracle is Ownable {
 
     event AnchorSet(address indexed anchor);
 
+    event HookSet(address indexed hook);
+
     modifier onlyOwnerOrHook() {
         require(msg.sender == hook || msg.sender == owner());
         _;
@@ -74,5 +76,11 @@ contract YoloOracle is Ownable {
         require(anchor == address(0), "YoloOracle: anchor already set");
         anchor = _anchor;
         emit AnchorSet(_anchor);
+    }
+
+    function setHook(address _hook) external onlyOwner {
+        require(hook == address(0), "YoloOracle: hook already set");
+        hook = _hook;
+        emit HookSet(_hook);
     }
 }
