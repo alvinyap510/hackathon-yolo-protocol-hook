@@ -770,12 +770,16 @@ contract YoloProtocolHook is Ownable, BaseHook {
         view
         returns (bool)
     {
-        uint256 colVal = yoloOracle.getAssetPrice(_collateral) * _pos.collateralSuppliedAmount;
-        uint256 debtVal = yoloOracle.getAssetPrice(_yoloAsset) * (_pos.yoloAssetMinted + _pos.accruedInterest);
-        // debtVal <= colVal * ltv / PRECISION_DIVISOR
+        uint256 collateralDecimals = IERC20Metadata(_collateral).decimals();
+        uint256 yoloAssetDecimals = IERC20Metadata(_yoloAsset).decimals();
+
+        uint256 colVal =
+            yoloOracle.getAssetPrice(_collateral) * _pos.collateralSuppliedAmount / (10 ** collateralDecimals);
+        uint256 debtVal = yoloOracle.getAssetPrice(_yoloAsset) * (_pos.yoloAssetMinted + _pos.accruedInterest)
+            / (10 ** yoloAssetDecimals);
+
         return debtVal * PRECISION_DIVISOR <= colVal * _ltv;
     }
-
     // ************************** //
     // *** HELPER FUNCTIONS *** //
     // *******&****************** //
