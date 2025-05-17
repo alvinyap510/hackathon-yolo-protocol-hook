@@ -631,7 +631,7 @@ contract YoloProtocolHook is Ownable, BaseHook {
 
     function createNewYoloAsset(string calldata _name, string calldata _symbol, uint8 _decimals, address _priceSource)
         external
-        onlyOwner
+        onlyOwner returns(address)
     {
         // 1. Deploy the token
         YoloAsset asset = new YoloAsset(_name, _symbol, _decimals);
@@ -665,6 +665,8 @@ contract YoloProtocolHook is Ownable, BaseHook {
 
         // mark it synthetic
         isSyntheticPool[PoolId.unwrap(pk.toId())] = true;
+
+        return a;
     }
 
     function setYoloAssetConfig(address _asset, uint256 _newMintCap, uint256 _newFlashLoanCap) external onlyOwner {
