@@ -18,6 +18,9 @@ Intergrated fully into UniswapV4's ecosystem as a V4Hook.
 
 ## Resources
 
+### 1. [Architecture Overview](https://excalidraw.com/#json=AAGt5LXoErhwoo8LEUqcQ,Za0EqrGsHfxef2Oeo3oYLQ)
+### 2. [Slides](https://www.canva.com/design/DAGnrDb8YJA/LGP_C-huOglqdulIq66-nA/edit?utm_content=DAGnrDb8YJA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+
 ## Contact Developer
 
 ## How To Run
